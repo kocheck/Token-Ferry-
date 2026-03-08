@@ -1,0 +1,16 @@
+{
+  "name": "token-ferry",
+  "version": "1.0.0",
+  "description": "Ferry tokens back and forth to GitHub from Figma",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT"
+}
