@@ -7,7 +7,7 @@ import { DTCGGroup, ParsedToken, isDTCGToken, isAliasRef, extractAliasPath } fro
  *
  * Each token's `path` is the dot-separated key path from the root.
  * The first segment of the path is treated as the collection name (`group`).
- * The remaining segments, joined with "/", form the Figma variable `name`.
+ * The remaining segments, joined with "/", form the variable `name`.
  */
 export function parseDTCGJson(json: DTCGGroup): ParsedToken[] {
   const results: ParsedToken[] = [];
@@ -36,7 +36,8 @@ function walk(
 
       const alias = isAliasRef(child.$value);
       const extensions = child.$extensions;
-      const figmaModes = extensions?.['com.figma']?.modes;
+      // Modes are stored under the Figma extension namespace; Sketch tokens don't use modes
+      const modes = extensions?.['com.figma']?.modes;
 
       const token: ParsedToken = {
         path,
@@ -47,8 +48,8 @@ function walk(
         description: child.$description,
         isAlias: alias,
         aliasPath: alias ? extractAliasPath(child.$value as string) : undefined,
-        figmaExtensions: extensions,
-        modes: figmaModes,
+        extensions,
+        modes,
       };
 
       out.push(token);

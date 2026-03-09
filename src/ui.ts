@@ -246,7 +246,10 @@ async function handlePushData(data: { json: string; collections: string[] }): Pr
 
     addStatus('Creating pull request...', 'info');
     const prTitle = `Update design tokens – ${data.collections.join(', ')}`;
-    const prBody = generatePRBody(data.collections);
+    const prBody = generatePRBody(data.collections, {
+      pluginName: 'Token Ferry Figma',
+      sectionTitle: 'Collections synced',
+    });
     const pr = await createPullRequest(config, branchName, prTitle, prBody);
 
     const safeUrl = pr.url.startsWith('https://github.com/') ? pr.url : '#';

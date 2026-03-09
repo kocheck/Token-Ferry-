@@ -213,15 +213,15 @@ export function generateBranchName(): string {
  * Generate a markdown PR body listing the synced groups/collections.
  *
  * @param names - The list of collection or group names to include.
- * @param options.pluginName - Plugin identifier shown in the body (default: "Token Ferry Figma").
- * @param options.sectionTitle - Heading for the list section (default: "Collections synced").
+ * @param options.pluginName - Plugin identifier shown in the body (default: "Token Ferry").
+ * @param options.sectionTitle - Heading for the list section (default: "Groups synced").
  */
 export function generatePRBody(
   names: string[],
   options: { pluginName?: string; sectionTitle?: string } = {},
 ): string {
-  const pluginName = options.pluginName ?? 'Token Ferry Figma';
-  const sectionTitle = options.sectionTitle ?? 'Collections synced';
+  const pluginName = options.pluginName ?? 'Token Ferry';
+  const sectionTitle = options.sectionTitle ?? 'Groups synced';
   const list = names.map((name) => `- **${name}**`).join('\n');
 
   return [

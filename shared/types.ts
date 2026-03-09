@@ -64,7 +64,7 @@ export interface ParsedToken {
   description?: string;
   isAlias: boolean;
   aliasPath?: string; // if alias: "brand.color.blue-500"
-  figmaExtensions?: DTCGToken['$extensions'];
+  extensions?: DTCGToken['$extensions'];
   modes?: Record<string, string | number | boolean>;
 }
 
