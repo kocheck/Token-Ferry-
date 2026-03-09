@@ -1,17 +1,4 @@
-import { DTCGGroup, ParsedToken, isDTCGToken } from './types';
-
-// ── Alias detection ─────────────────────────────────────────────────────────
-
-const ALIAS_RE = /^\{(.+)\}$/;
-
-function isAliasValue(value: unknown): value is string {
-  return typeof value === 'string' && ALIAS_RE.test(value);
-}
-
-function extractAliasPath(value: string): string {
-  const match = value.match(ALIAS_RE);
-  return match ? match[1] : '';
-}
+import { DTCGGroup, ParsedToken, isDTCGToken, isAliasRef, extractAliasPath } from './types';
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -47,7 +34,7 @@ function walk(
       const nameParts = [...segments.slice(1), key];
       const name = nameParts.join('/');
 
-      const alias = isAliasValue(child.$value);
+      const alias = isAliasRef(child.$value);
       const extensions = child.$extensions;
       const figmaModes = extensions?.['com.figma']?.modes;
 

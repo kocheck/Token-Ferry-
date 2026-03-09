@@ -1,5 +1,5 @@
 import { CardData, isVariableAlias, rgbaToHex } from './types';
-import { relativeLuminance, getContrastOnWhite, contrastLabel } from './contrast-utils';
+import { relativeLuminance, getContrastOnWhite, getContrastOnBlack, contrastLabel } from './contrast-utils';
 
 const CARD_WIDTH = 200;
 const SWATCH_HEIGHT = 80;
@@ -36,12 +36,26 @@ async function loadFonts(): Promise<{
 async function gatherCardData(collectionIds: string[]): Promise<CardData[]> {
   const cards: CardData[] = [];
 
-  for (const colId of collectionIds) {
-    const collection = await figma.variables.getVariableCollectionByIdAsync(colId);
+  // Fetch all variables and collections once to avoid N+1 API calls
+  const [allVariables, allCollections] = await Promise.all([
+    figma.variables.getLocalVariablesAsync(),
+    Promise.all(collectionIds.map(id => figma.variables.getVariableCollectionByIdAsync(id))),
+  ]);
+
+  const varsById = new Map(allVariables.map(v => [v.id, v]));
+  const collectionSet = new Set(collectionIds);
+
+  // Also build a collection-by-id map for resolving alias targets
+  const collectionsById = new Map<string, VariableCollection>();
+  for (const col of allCollections) {
+    if (col) collectionsById.set(col.id, col);
+  }
+
+  for (const collection of allCollections) {
     if (!collection) continue;
 
     for (const varId of collection.variableIds) {
-      const variable = await figma.variables.getVariableByIdAsync(varId);
+      const variable = varsById.get(varId);
       if (!variable || variable.resolvedType !== "COLOR") continue;
 
       const modeId = collection.modes[0].modeId;
@@ -52,9 +66,9 @@ async function gatherCardData(collectionIds: string[]): Promise<CardData[]> {
 
       if (isVariableAlias(rawValue)) {
         aliasTargetId = rawValue.id;
-        const resolved = await figma.variables.getVariableByIdAsync(rawValue.id);
+        const resolved = varsById.get(rawValue.id);
         if (!resolved) continue;
-        const resolvedCol = await figma.variables.getVariableCollectionByIdAsync(resolved.variableCollectionId);
+        const resolvedCol = collectionsById.get(resolved.variableCollectionId);
         if (!resolvedCol) continue;
         const resolvedMode = resolvedCol.modes[0].modeId;
         color = resolved.valuesByMode[resolvedMode] as RGBA;
@@ -70,7 +84,7 @@ async function gatherCardData(collectionIds: string[]): Promise<CardData[]> {
         hexValue: rgbaToHex(color),
         rgbaColor: { r: color.r, g: color.g, b: color.b, a: color.a ?? 1 },
         contrastOnWhite: getContrastOnWhite(color.r, color.g, color.b),
-        contrastOnBlack: getContrastOnWhite(color.r, color.g, color.b),
+        contrastOnBlack: getContrastOnBlack(color.r, color.g, color.b),
         aliasTargetId,
         collectionName: collection.name,
       });
@@ -200,7 +214,6 @@ export async function renderVariableCards(collectionIds: string[]): Promise<void
   wrapper.resize(COLUMNS * CELL_X, totalRows * CELL_Y + 40);
 
   const cardPositions = new Map<string, { x: number; y: number }>();
-  const cardNodes: FrameNode[] = [];
 
   cards.forEach((data, i) => {
     const col = i % COLUMNS;
@@ -212,7 +225,6 @@ export async function renderVariableCards(collectionIds: string[]): Promise<void
     cardNode.x = x;
     cardNode.y = y;
     wrapper.appendChild(cardNode);
-    cardNodes.push(cardNode);
     cardPositions.set(data.variableId, { x, y });
   });
 

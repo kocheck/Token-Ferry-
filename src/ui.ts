@@ -1,7 +1,7 @@
 // ── Token Ferry – UI Script ─────────────────────────────────────────────────
 // Runs inside the plugin iframe. Has access to fetch, DOM, etc.
 
-import type { GitHubSettings, CollectionInfo, PullPreview, SandboxToUIMessage } from './types';
+import type { GitHubSettings, CollectionInfo, PullPreview, SandboxToUIMessage, UIToSandboxMessage } from './types';
 import {
   generateBranchName,
   generatePRBody,
@@ -48,7 +48,7 @@ let allSelected = true;
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** Send a typed message to the plugin sandbox. */
-function postToSandbox(msg: Record<string, unknown>): void {
+function postToSandbox(msg: UIToSandboxMessage): void {
   parent.postMessage({ pluginMessage: msg }, '*');
 }
 
@@ -87,11 +87,29 @@ function timestamp(): string {
 
 // ── Status Log ─────────────────────────────────────────────────────────────
 
-function addStatus(message: string, level: 'info' | 'error' | 'success' = 'info'): void {
+const MAX_STATUS_ENTRIES = 200;
+
+function addStatus(message: string, level: 'info' | 'error' | 'success' = 'info', html = false): void {
   const el = document.createElement('div');
   el.className = `status-msg ${level}`;
-  el.innerHTML = `<span style="opacity:0.5">[${timestamp()}]</span> ${message}`;
+
+  const ts = document.createElement('span');
+  ts.style.opacity = '0.5';
+  ts.textContent = `[${timestamp()}] `;
+  el.appendChild(ts);
+
+  if (html) {
+    const content = document.createElement('span');
+    content.innerHTML = message;
+    el.appendChild(content);
+  } else {
+    el.appendChild(document.createTextNode(message));
+  }
+
   statusLog.appendChild(el);
+  while (statusLog.childElementCount > MAX_STATUS_ENTRIES) {
+    statusLog.removeChild(statusLog.firstChild!);
+  }
   statusLog.scrollTop = statusLog.scrollHeight;
 }
 
@@ -233,7 +251,7 @@ async function handlePushData(data: { json: string; collections: string[] }): Pr
     const prBody = generatePRBody(data.collections);
     const pr = await createPullRequest(config, branchName, prTitle, prBody);
 
-    addStatus(`PR created: <a href="${pr.url}" target="_blank">#${pr.number}</a>`, 'success');
+    addStatus(`PR created: <a href="${pr.url}" target="_blank">#${pr.number}</a>`, 'success', true);
     postToSandbox({ type: 'push-complete', prUrl: pr.url });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

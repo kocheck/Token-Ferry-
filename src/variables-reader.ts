@@ -77,6 +77,9 @@ export async function readVariables(
 
   // Fetch all local variables and filter to selected collections
   const allVariables = await figma.variables.getLocalVariablesAsync();
+  const variablesById = new Map<string, FigmaVariable>(
+    allVariables.map((v) => [v.id, v])
+  );
   const filtered = allVariables.filter((v) =>
     collectionIdSet.has(v.variableCollectionId)
   );
@@ -93,26 +96,14 @@ export async function readVariables(
       const modeName = modeNameMap.get(modeId) ?? modeId;
 
       if (isVariableAlias(value)) {
-        const targetVar =
-          await figma.variables.getVariableByIdAsync(value.id);
+        const targetVar = variablesById.get(value.id) ?? null;
 
         if (targetVar) {
           const targetCollection = collectionsById.get(
             targetVar.variableCollectionId
           );
-          // If the target collection isn't in our local map, fetch it
-          let targetCollectionName: string;
-          if (targetCollection) {
-            targetCollectionName = targetCollection.name;
-          } else {
-            const allCols =
-              await figma.variables.getLocalVariableCollectionsAsync();
-            const found = allCols.find(
-              (c) => c.id === targetVar.variableCollectionId
-            );
-            targetCollectionName =
-              found?.name ?? targetVar.variableCollectionId;
-          }
+          const targetCollectionName =
+            targetCollection?.name ?? targetVar.variableCollectionId;
 
           // Build DTCG reference: {collectionName.group.token}
           // Target variable name uses "/" separators — convert to "."

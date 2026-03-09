@@ -120,6 +120,19 @@ export type UIToSandboxMessage =
   | { type: "apply-pull" }
   | { type: "visualize"; collectionIds: string[] };
 
+// ── Alias Helpers ───────────────────────────────────────────────────────────
+
+const ALIAS_RE = /^\{(.+)\}$/;
+
+export function isAliasRef(value: unknown): value is string {
+  return typeof value === 'string' && ALIAS_RE.test(value);
+}
+
+export function extractAliasPath(value: string): string {
+  const match = value.match(ALIAS_RE);
+  return match ? match[1] : '';
+}
+
 // ── Type Guards ─────────────────────────────────────────────────────────────
 
 export function isVariableAlias(

@@ -1,16 +1,4 @@
-import { ParsedToken, PullPreview, PullPreviewItem, dtcgTypeToFigma, hexToRgba } from './types';
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-const ALIAS_RE = /^\{(.+)\}$/;
-
-function isAliasString(v: unknown): v is string {
-  return typeof v === 'string' && ALIAS_RE.test(v);
-}
-
-function extractAlias(v: string): string {
-  return v.match(ALIAS_RE)![1];
-}
+import { ParsedToken, PullPreview, PullPreviewItem, DTCGType, dtcgTypeToFigma, hexToRgba, isAliasRef, extractAliasPath } from './types';
 
 function stringifyValue(v: unknown): string {
   if (typeof v === 'object' && v !== null) {
@@ -19,23 +7,37 @@ function stringifyValue(v: unknown): string {
   return String(v);
 }
 
-// ── Pull Preview ────────────────────────────────────────────────────────────
+// ── Shared Lookup Builder ────────────────────────────────────────────────────
 
-export async function generatePullPreview(tokens: ParsedToken[]): Promise<PullPreview> {
+interface VariableLookups {
+  collectionsByName: Map<string, VariableCollection>;
+  variablesByKey: Map<string, Variable>; // key = "collectionName::variableName"
+}
+
+async function buildVariableLookups(): Promise<VariableLookups> {
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const variables = await figma.variables.getLocalVariablesAsync();
 
-  // Build lookup: "collectionName::variableName" → Variable
   const collectionIdToName = new Map<string, string>();
+  const collectionsByName = new Map<string, VariableCollection>();
   for (const c of collections) {
     collectionIdToName.set(c.id, c.name);
+    collectionsByName.set(c.name, c);
   }
 
-  const existingMap = new Map<string, Variable>();
+  const variablesByKey = new Map<string, Variable>();
   for (const v of variables) {
     const colName = collectionIdToName.get(v.variableCollectionId) ?? '';
-    existingMap.set(`${colName}::${v.name}`, v);
+    variablesByKey.set(`${colName}::${v.name}`, v);
   }
+
+  return { collectionsByName, variablesByKey };
+}
+
+// ── Pull Preview ────────────────────────────────────────────────────────────
+
+export async function generatePullPreview(tokens: ParsedToken[]): Promise<PullPreview> {
+  const { variablesByKey: existingMap } = await buildVariableLookups();
 
   const items: PullPreviewItem[] = [];
   const summary = { create: 0, update: 0, unchanged: 0 };
@@ -76,24 +78,7 @@ export async function applyTokens(tokens: ParsedToken[]): Promise<void> {
     byCollection.set(t.group, list);
   }
 
-  const existingCollections = await figma.variables.getLocalVariableCollectionsAsync();
-  const existingVariables = await figma.variables.getLocalVariablesAsync();
-
-  // Lookup helpers
-  const collectionsByName = new Map<string, VariableCollection>();
-  for (const c of existingCollections) {
-    collectionsByName.set(c.name, c);
-  }
-
-  const variablesByCollectionAndName = new Map<string, Variable>();
-  const collectionIdToName = new Map<string, string>();
-  for (const c of existingCollections) {
-    collectionIdToName.set(c.id, c.name);
-  }
-  for (const v of existingVariables) {
-    const colName = collectionIdToName.get(v.variableCollectionId) ?? '';
-    variablesByCollectionAndName.set(`${colName}::${v.name}`, v);
-  }
+  const { collectionsByName, variablesByKey: variablesByCollectionAndName } = await buildVariableLookups();
 
   // Map of dtcg path → Variable (for alias resolution in pass 2)
   const variableMap = new Map<string, Variable>();
@@ -164,7 +149,7 @@ export async function applyTokens(tokens: ParsedToken[]): Promise<void> {
         for (const [modeName, modeValue] of Object.entries(token.modes)) {
           const modeId = existingModes.get(modeName);
           if (!modeId) continue;
-          if (isAliasString(modeValue)) continue; // deferred to pass 2
+          if (isAliasRef(modeValue)) continue; // deferred to pass 2
           const rawModeVal = resolveRawValue(token.type, modeValue);
           variable.setValueForMode(modeId, rawModeVal);
         }
@@ -174,18 +159,23 @@ export async function applyTokens(tokens: ParsedToken[]): Promise<void> {
 
   // ── Pass 2: set alias bindings ────────────────────────────────────────────
 
+  // Precompute mode maps per collection to avoid rebuilding per-token
+  const modeMaps = new Map<string, { modeMap: Map<string, string>; defaultModeId: string }>();
+  for (const [name, col] of collectionsByName) {
+    modeMaps.set(name, {
+      modeMap: new Map(col.modes.map(m => [m.name, m.modeId])),
+      defaultModeId: col.modes[0].modeId,
+    });
+  }
+
   for (const token of tokens) {
     const variable = variableMap.get(token.path);
     if (!variable) continue;
 
-    const collection = collectionsByName.get(token.group);
-    if (!collection) continue;
+    const collectionModes = modeMaps.get(token.group);
+    if (!collectionModes) continue;
 
-    const modeMap = new Map<string, string>();
-    for (const m of collection.modes) {
-      modeMap.set(m.name, m.modeId);
-    }
-    const defaultModeId = collection.modes[0].modeId;
+    const { modeMap, defaultModeId } = collectionModes;
 
     // Default value alias
     if (token.isAlias && token.aliasPath) {
@@ -199,10 +189,10 @@ export async function applyTokens(tokens: ParsedToken[]): Promise<void> {
     // Per-mode aliases
     if (token.modes) {
       for (const [modeName, modeValue] of Object.entries(token.modes)) {
-        if (!isAliasString(modeValue)) continue;
+        if (!isAliasRef(modeValue)) continue;
         const modeId = modeMap.get(modeName);
         if (!modeId) continue;
-        const aliasPath = extractAlias(modeValue);
+        const aliasPath = extractAliasPath(modeValue);
         const target = variableMap.get(aliasPath);
         if (target) {
           const alias = figma.variables.createVariableAlias(target);
@@ -216,7 +206,7 @@ export async function applyTokens(tokens: ParsedToken[]): Promise<void> {
 // ── Value conversion ────────────────────────────────────────────────────────
 
 function resolveRawValue(
-  type: string,
+  type: DTCGType,
   value: string | number | boolean,
 ): VariableValue {
   if (type === 'color' && typeof value === 'string') {

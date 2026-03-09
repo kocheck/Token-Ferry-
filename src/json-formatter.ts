@@ -99,13 +99,14 @@ function resolvedToOutput(
 function setNestedValue(
   obj: DTCGGroup,
   pathParts: string[],
-  value: DTCGToken
+  value: DTCGToken,
+  index = 0
 ): void {
-  if (pathParts.length === 0) return;
+  if (index >= pathParts.length) return;
 
-  const key = pathParts[0];
+  const key = pathParts[index];
 
-  if (pathParts.length === 1) {
+  if (index === pathParts.length - 1) {
     obj[key] = value;
     return;
   }
@@ -115,5 +116,5 @@ function setNestedValue(
     obj[key] = {};
   }
 
-  setNestedValue(obj[key] as DTCGGroup, pathParts.slice(1), value);
+  setNestedValue(obj[key] as DTCGGroup, pathParts, value, index + 1);
 }

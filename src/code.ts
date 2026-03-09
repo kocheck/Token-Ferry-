@@ -76,11 +76,8 @@ figma.ui.onmessage = async (msg: UIToSandboxMessage) => {
         const dtcgObj = formatToDTCG(variables);
         const json = JSON.stringify(dtcgObj, null, 2);
 
-        const allCollections = await getCollections();
-        const selectedIds = new Set(msg.collectionIds);
-        const collections = allCollections
-          .filter((c) => selectedIds.has(c.id))
-          .map((c) => c.name);
+        // Derive collection names from already-read variables
+        const collections = [...new Set(variables.map(v => v.collectionName))];
 
         sendToUI({ type: 'push-data', data: { json, collections } });
         sendStatus('Variables serialized, pushing to GitHub...', 'info');
@@ -91,11 +88,7 @@ figma.ui.onmessage = async (msg: UIToSandboxMessage) => {
     }
 
     case 'push-complete': {
-      try {
-        sendStatus(`Push complete! PR: ${msg.prUrl}`, 'success');
-      } catch (err) {
-        sendStatus(`Error handling push complete: ${String(err)}`, 'error');
-      }
+      sendStatus(`Push complete! PR: ${msg.prUrl}`, 'success');
       break;
     }
 

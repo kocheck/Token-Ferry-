@@ -52,7 +52,6 @@ async function buildUI() {
     `<script>\n${jsCode}\n</script>`
   );
 
-  mkdirSync(resolve(__dirname, "dist"), { recursive: true });
   writeFileSync(resolve(__dirname, "dist/ui.html"), finalHtml);
   console.log("Built dist/ui.html");
 }
