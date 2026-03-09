@@ -187,8 +187,8 @@ function drawArrow(
       );
       layer.bezierPath = nativePath;
     }
-  } catch {
-    // Native API unavailable — arrow curve will fall back to default shape
+  } catch (err) {
+    console.warn('Token Ferry: NSBezierPath unavailable, arrow curve skipped:', err);
   }
 
   // Arrowhead triangle

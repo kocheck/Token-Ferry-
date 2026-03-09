@@ -4,15 +4,13 @@
 
 import BrowserWindow from 'sketch-module-web-view';
 import { getWebview } from 'sketch-module-web-view/remote';
-// sketch/dom and sketch/ui are used at runtime for Sketch API access
-// but some features are accessed indirectly through other modules
 import { loadSettings, saveSettings } from '../storage';
 import { getSwatchGroups, readSwatches } from '../swatches-reader';
 import { formatToDTCG } from '../json-formatter';
 import { parseDTCGJson } from '../json-parser';
 import { generatePullPreview, applyTokens } from '../swatches-writer';
 import { renderSwatchCards } from '../canvas-renderer';
-import type { WebViewToPluginMessage, PluginToWebViewMessage, GitHubSettings, DTCGGroup } from '../types';
+import type { WebViewToPluginMessage, PluginToWebViewMessage, GitHubSettings } from '../types';
 import { validateDTCGDocument } from '../types';
 
 const WEBVIEW_ID = 'token-ferry-panel';
@@ -105,7 +103,7 @@ function handleMessage(msgString: string): void {
           sendStatus('Invalid token file: expected a JSON object.', 'error');
           break;
         }
-        const tokens = parseDTCGJson(parsed as DTCGGroup);
+        const tokens = parseDTCGJson(parsed);
         pendingTokens = tokens;
 
         const preview = generatePullPreview(tokens);

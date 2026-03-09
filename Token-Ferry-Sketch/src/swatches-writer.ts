@@ -37,6 +37,7 @@ export function generatePullPreview(tokens: ParsedToken[]): PullPreview {
     existingMap.set(swatch.name, swatch);
   }
 
+  const tokensByPath = buildTokenMap(tokens);
   const items: PullPreviewItem[] = [];
   const summary = { create: 0, update: 0, unchanged: 0 };
 
@@ -46,7 +47,7 @@ export function generatePullPreview(tokens: ParsedToken[]): PullPreview {
 
     const fullName = `${token.group}/${token.name}`;
     const existing = existingMap.get(fullName);
-    const newVal = stringifyValue(resolveTokenValue(token, tokens));
+    const newVal = stringifyValue(resolveTokenValue(token, tokensByPath));
 
     let action: PullPreviewItem['action'];
     let currentValue: string | undefined;
@@ -83,11 +84,7 @@ export function applyTokens(tokens: ParsedToken[]): void {
     throw new Error('No document open. Open a Sketch file first.');
   }
 
-  // Build token lookup for alias resolution
-  const tokensByPath = new Map<string, ParsedToken>();
-  for (const token of tokens) {
-    tokensByPath.set(token.path, token);
-  }
+  const tokensByPath = buildTokenMap(tokens);
 
   // Build existing swatch lookup
   const existingByName = new Map<string, typeof document.swatches[0]>();
@@ -100,7 +97,7 @@ export function applyTokens(tokens: ParsedToken[]): void {
 
   for (const token of colorTokens) {
     const fullName = `${token.group}/${token.name}`;
-    const colorValue = resolveTokenValue(token, tokens);
+    const colorValue = resolveTokenValue(token, tokensByPath);
     const sketchColor = hexToSketchColor(String(colorValue));
 
     const existing = existingByName.get(fullName);
@@ -124,26 +121,34 @@ export function applyTokens(tokens: ParsedToken[]): void {
  * Resolve a token's value, following alias references to concrete values.
  * Prevents infinite loops with a depth limit.
  */
+function buildTokenMap(tokens: ParsedToken[]): Map<string, ParsedToken> {
+  const map = new Map<string, ParsedToken>();
+  for (const token of tokens) {
+    map.set(token.path, token);
+  }
+  return map;
+}
+
 function resolveTokenValue(
   token: ParsedToken,
-  allTokens: ParsedToken[],
+  tokensByPath: Map<string, ParsedToken>,
   depth = 0,
 ): string | number | boolean {
   if (depth > 10) return String(token.value); // prevent infinite alias loops
 
   if (token.isAlias && token.aliasPath) {
-    const target = allTokens.find(t => t.path === token.aliasPath);
+    const target = tokensByPath.get(token.aliasPath);
     if (target) {
-      return resolveTokenValue(target, allTokens, depth + 1);
+      return resolveTokenValue(target, tokensByPath, depth + 1);
     }
   }
 
   // For mode values that are aliases, resolve them too
   if (isAliasRef(token.value)) {
     const aliasPath = extractAliasPath(token.value as string);
-    const target = allTokens.find(t => t.path === aliasPath);
+    const target = tokensByPath.get(aliasPath);
     if (target) {
-      return resolveTokenValue(target, allTokens, depth + 1);
+      return resolveTokenValue(target, tokensByPath, depth + 1);
     }
   }
 

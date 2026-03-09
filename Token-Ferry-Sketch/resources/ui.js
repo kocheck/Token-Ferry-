@@ -331,7 +331,8 @@ function handlePushData(data) {
     })
     .then(function(r) { return r.json(); })
     .then(function(pr) {
-      addStatus('PR created: <a href="' + pr.html_url + '" target="_blank">#' + pr.number + '</a>', 'success', true);
+      var safeUrl = (pr.html_url && pr.html_url.indexOf('https://github.com/') === 0) ? pr.html_url : '#';
+      addStatus('PR created: <a href="' + safeUrl + '" target="_blank">#' + pr.number + '</a>', 'success', true);
       postToPlugin({ type: 'push-complete', prUrl: pr.html_url });
     })
     .catch(function(err) {
