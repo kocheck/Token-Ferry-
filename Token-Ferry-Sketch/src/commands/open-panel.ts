@@ -7,7 +7,7 @@ import { getWebview } from 'sketch-module-web-view/remote';
 import { loadSettings, saveSettings } from '../storage';
 import { getSwatchGroups, readSwatches } from '../swatches-reader';
 import { formatToDTCG } from '../json-formatter';
-import { parseDTCGJson } from '../json-parser';
+import { parseDTCGJson } from '../../../shared/json-parser';
 import { generatePullPreview, applyTokens } from '../swatches-writer';
 import { renderSwatchCards } from '../canvas-renderer';
 import type { WebViewToPluginMessage, PluginToWebViewMessage, GitHubSettings } from '../types';

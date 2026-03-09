@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     globals: true,
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', '../shared/**/*.test.ts'],
     alias: {
       'sketch/dom': './src/__mocks__/sketch-dom.ts',
       'sketch/ui': './src/__mocks__/sketch-ui.ts',

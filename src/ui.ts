@@ -10,7 +10,7 @@ import {
   getFileContent,
   commitFile,
   createPullRequest,
-} from './github-api';
+} from '../shared/github-api';
 
 // ── DOM References ─────────────────────────────────────────────────────────
 

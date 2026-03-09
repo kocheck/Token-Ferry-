@@ -11,7 +11,7 @@ import {
   getContrastOnWhite,
   getContrastOnBlack,
   contrastLabel,
-} from './contrast-utils';
+} from '../../shared/contrast-utils';
 
 const CARD_WIDTH = 200;
 const SWATCH_HEIGHT = 80;

@@ -3,6 +3,7 @@
 // Comparable to the Figma version but works with Sketch's flat swatch model.
 
 import { SwatchData, DTCGGroup, DTCGToken } from './types';
+import { setNestedValue } from '../../shared/json-formatter-utils';
 
 /**
  * Converts an array of SwatchData into a nested DTCG-compatible JSON object.
@@ -40,29 +41,3 @@ export function formatToDTCG(swatches: SwatchData[]): DTCGGroup {
   return root;
 }
 
-/**
- * Recursively creates nested objects along the given path and sets
- * the leaf to the provided value.
- */
-function setNestedValue(
-  obj: DTCGGroup,
-  pathParts: string[],
-  value: DTCGToken,
-  index = 0,
-): void {
-  if (index >= pathParts.length) return;
-
-  const key = pathParts[index];
-
-  if (index === pathParts.length - 1) {
-    obj[key] = value;
-    return;
-  }
-
-  // Ensure intermediate node exists and is a group (not a token)
-  if (!(key in obj) || '$value' in (obj[key] as object)) {
-    obj[key] = {};
-  }
-
-  setNestedValue(obj[key] as DTCGGroup, pathParts, value, index + 1);
-}

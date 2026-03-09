@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { formatToDTCG } from './json-formatter';
-import { parseDTCGJson } from './json-parser';
+import { parseDTCGJson } from '../../shared/json-parser';
 import type { SwatchData } from './types';
 
 function makeSwatch(overrides: Partial<SwatchData> = {}): SwatchData {

@@ -38,4 +38,13 @@ describe('generatePRBody', () => {
     const body = generatePRBody([]);
     expect(body).toContain('## Token Ferry Sync');
   });
+
+  it('accepts custom pluginName and sectionTitle', () => {
+    const body = generatePRBody(['swatches'], {
+      pluginName: 'Token Ferry Sketch',
+      sectionTitle: 'Swatch groups synced',
+    });
+    expect(body).toContain('Token Ferry Sketch');
+    expect(body).toContain('### Swatch groups synced');
+  });
 });

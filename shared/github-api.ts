@@ -1,10 +1,9 @@
 // ── GitHub REST API Module ──────────────────────────────────────────────────
-// Runs in the WebView context in Sketch. Uses fetch (available in WebView).
-// Structurally identical to the Figma version — the WebView has browser APIs.
+// Platform-agnostic — runs in any browser-like context (Figma UI iframe, Sketch WebView).
 
 import type { GitHubSettings } from './types';
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface FileContentResponse {
   content: string;
@@ -16,7 +15,7 @@ interface PullRequestResponse {
   number: number;
 }
 
-// ── Internal Helper ─────────────────────────────────────────────────────────
+// ── Internal Helper ────────────────────────────────────────────────────────
 
 const API_BASE = 'https://api.github.com';
 
@@ -56,10 +55,11 @@ async function githubFetch(
   return response;
 }
 
-// ── Exported Functions ──────────────────────────────────────────────────────
+// ── Exported Functions ─────────────────────────────────────────────────────
 
 /**
  * Get the SHA of a branch tip (defaults to baseBranch from config).
+ * GET /repos/{owner}/{repo}/git/ref/heads/{branch}
  */
 export async function getBaseSha(
   config: GitHubSettings,
@@ -80,6 +80,7 @@ export async function getBaseSha(
 
 /**
  * Create a new branch from a base SHA.
+ * POST /repos/{owner}/{repo}/git/refs
  */
 export async function createBranch(
   config: GitHubSettings,
@@ -100,6 +101,7 @@ export async function createBranch(
 
 /**
  * Get file content and SHA from the repo. Returns null if the file does not exist.
+ * GET /repos/{owner}/{repo}/contents/{path}?ref={ref}
  */
 export async function getFileContent(
   config: GitHubSettings,
@@ -113,6 +115,7 @@ export async function getFileContent(
   try {
     response = await githubFetch(config, url);
   } catch (err) {
+    // githubFetch throws on 404 — treat as file-not-found
     if (err instanceof Error && err.message.includes('not found')) {
       return null;
     }
@@ -129,6 +132,7 @@ export async function getFileContent(
 
 /**
  * Create or update a file in the repo.
+ * PUT /repos/{owner}/{repo}/contents/{path}
  */
 export async function commitFile(
   config: GitHubSettings,
@@ -159,6 +163,7 @@ export async function commitFile(
 
 /**
  * Open a pull request.
+ * POST /repos/{owner}/{repo}/pulls
  */
 export async function createPullRequest(
   config: GitHubSettings,
@@ -185,6 +190,7 @@ export async function createPullRequest(
 
 /**
  * Generate a timestamped branch name.
+ * Format: tokens/update-YYYYMMDD-HHmmss
  */
 export function generateBranchName(): string {
   const now = new Date();
@@ -204,17 +210,26 @@ export function generateBranchName(): string {
 }
 
 /**
- * Generate a markdown PR body listing the synced groups.
+ * Generate a markdown PR body listing the synced groups/collections.
+ *
+ * @param names - The list of collection or group names to include.
+ * @param options.pluginName - Plugin identifier shown in the body (default: "Token Ferry Figma").
+ * @param options.sectionTitle - Heading for the list section (default: "Collections synced").
  */
-export function generatePRBody(groupNames: string[]): string {
-  const list = groupNames.map((name) => `- **${name}**`).join('\n');
+export function generatePRBody(
+  names: string[],
+  options: { pluginName?: string; sectionTitle?: string } = {},
+): string {
+  const pluginName = options.pluginName ?? 'Token Ferry Figma';
+  const sectionTitle = options.sectionTitle ?? 'Collections synced';
+  const list = names.map((name) => `- **${name}**`).join('\n');
 
   return [
     '## Token Ferry Sync',
     '',
-    'This PR was automatically created by the **Token Ferry** Sketch plugin.',
+    `This PR was automatically created by the **${pluginName}** plugin.`,
     '',
-    '### Swatch groups synced',
+    `### ${sectionTitle}`,
     list,
     '',
     '---',

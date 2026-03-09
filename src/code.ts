@@ -5,7 +5,7 @@
 import { loadSettings, saveSettings } from './storage';
 import { getCollections, readVariables } from './variables-reader';
 import { formatToDTCG } from './json-formatter';
-import { parseDTCGJson } from './json-parser';
+import { parseDTCGJson } from '../shared/json-parser';
 import { generatePullPreview, applyTokens } from './variables-writer';
 import { renderVariableCards } from './canvas-renderer';
 import type { UIToSandboxMessage, SandboxToUIMessage, GitHubSettings, ParsedToken } from './types';
