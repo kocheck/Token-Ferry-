@@ -1,0 +1,42 @@
+{
+  "compatibleVersion": 3,
+  "bundleVersion": 1,
+  "icon": "icon.png",
+  "commands": [
+    {
+      "name": "Open Token Ferry",
+      "identifier": "open-panel",
+      "script": "./commands/open-panel.js",
+      "handler": "onRun"
+    },
+    {
+      "name": "Visualize Color Tokens",
+      "identifier": "visualize",
+      "script": "./commands/visualize.js",
+      "handler": "onRun"
+    },
+    {
+      "name": "Handle WebView Message",
+      "identifier": "webview-handler",
+      "script": "./commands/webview-handler.js",
+      "handlers": {
+        "actions": {
+          "handleMessage": "onWebViewMessage"
+        }
+      }
+    }
+  ],
+  "menu": {
+    "title": "Token Ferry",
+    "items": [
+      "open-panel",
+      "visualize"
+    ]
+  },
+  "identifier": "com.token-ferry.sketch",
+  "name": "Token Ferry",
+  "description": "Two-way GitHub sync for design tokens (DTCG JSON) with canvas visualization",
+  "version": "1.0.0",
+  "author": "Token Ferry",
+  "authorEmail": "token-ferry@example.com"
+}

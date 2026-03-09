@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.js
+!esbuild.config.mjs
+!Token-Ferry-Sketch/**/*.js
+.DS_Store

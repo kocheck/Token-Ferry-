@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Token Ferry</title>
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: 12px;
+      color: #1e1e1e;
+      background: #fafafa;
+      line-height: 1.5;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #e4e4e7;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Main scroll area ──────────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Card ──────────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #71717a;
+    }
+
+    .card-header:hover { background: #fafafa; }
+
+    .chevron {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      font-size: 10px;
+      color: #a1a1aa;
+    }
+
+    .card-header.collapsed .chevron { transform: rotate(-90deg); }
+
+    .card-body {
+      padding: 0 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-body.hidden { display: none; }
+
+    /* ── Form elements ─────────────────────────────────────────────────── */
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #52525b;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #d4d4d8;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #1e1e1e;
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: #4f3cec;
+      box-shadow: 0 0 0 2px rgba(79, 60, 236, 0.12);
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #4f3cec;
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: #3f2ec0; }
+
+    .btn-secondary {
+      background: transparent;
+      color: #4f3cec;
+      border: 1px solid #4f3cec;
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: rgba(79, 60, 236, 0.06); }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+
+    /* ── Collections ───────────────────────────────────────────────────── */
+    .collection-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toggle-link {
+      font-size: 11px;
+      color: #4f3cec;
+      cursor: pointer;
+      font-weight: 500;
+      border: none;
+      background: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .toggle-link:hover { text-decoration: underline; }
+
+    #collection-list {
+      max-height: 140px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .collection-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .collection-item:hover { background: #f4f4f5; }
+
+    .collection-item input[type="checkbox"] {
+      accent-color: #4f3cec;
+    }
+
+    .collection-meta {
+      color: #a1a1aa;
+      font-size: 10px;
+      margin-left: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 16px;
+      color: #a1a1aa;
+      font-size: 11px;
+    }
+
+    /* ── Actions ────────────────────────────────────────────────────────── */
+    .actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .actions .btn { flex: 1; }
+
+    /* ── Status Log ────────────────────────────────────────────────────── */
+    #status-log {
+      max-height: 120px;
+      min-height: 40px;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .status-msg {
+      font-size: 11px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .status-msg.info    { color: #71717a; }
+    .status-msg.success { color: #16a34a; }
+    .status-msg.error   { color: #dc2626; }
+
+    .status-msg a {
+      color: #4f3cec;
+      text-decoration: underline;
+    }
+
+    /* ── Pull Preview Overlay ─────────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .modal {
+      background: #fff;
+      border-radius: 10px;
+      width: 92%;
+      max-height: 80%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e4e4e7;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #71717a;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .modal-close:hover { background: #f4f4f5; }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+    }
+
+    .preview-summary {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .badge-create  { background: #dcfce7; color: #16a34a; }
+    .badge-update  { background: #fef3c7; color: #d97706; }
+    .badge-unchanged { background: #f4f4f5; color: #71717a; }
+
+    .preview-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .preview-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .preview-item:hover { background: #fafafa; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid #e4e4e7;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">🛳️ Token Ferry</div>
+
+  <div class="main">
+
+    <!-- Settings Section -->
+    <div class="card">
+      <div class="card-header" id="settings-toggle">
+        Settings <span class="chevron">▼</span>
+      </div>
+      <div class="card-body" id="settings-body">
+        <label>
+          Repository (owner/repo)
+          <input type="text" id="input-repo" placeholder="acme/design-system" />
+        </label>
+        <label>
+          File path
+          <input type="text" id="input-filepath" placeholder="tokens/design-tokens.json" value="tokens/design-tokens.json" />
+        </label>
+        <label>
+          Base branch
+          <input type="text" id="input-branch" placeholder="main" value="main" />
+        </label>
+        <label>
+          Personal Access Token
+          <input type="password" id="input-pat" placeholder="ghp_xxxxxxxxxxxx" />
+        </label>
+        <button class="btn btn-primary btn-sm" id="btn-save-settings">Save Settings</button>
+      </div>
+    </div>
+
+    <!-- Collections Section -->
+    <div class="card">
+      <div class="card-header" id="collections-toggle">
+        Collections <span class="chevron">▼</span>
+      </div>
+      <div class="card-body" id="collections-body">
+        <div class="collection-controls">
+          <span style="font-size:11px;color:#71717a;" id="collection-count">0 collections</span>
+          <button class="toggle-link" id="btn-select-toggle">Select All</button>
+        </div>
+        <div id="collection-list">
+          <div class="empty-state">Loading collections...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="card">
+      <div class="card-body" style="padding-top:12px;">
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-push">Push to GitHub</button>
+          <button class="btn btn-primary" id="btn-pull">Pull from GitHub</button>
+          <button class="btn btn-secondary" id="btn-visualize">Visualize</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Log -->
+    <div class="card" style="flex-shrink:0;">
+      <div class="card-header">Status Log</div>
+      <div id="status-log">
+        <div class="status-msg info">Ready.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pull Preview Overlay -->
+  <div class="overlay hidden" id="pull-preview-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        Pull Preview
+        <button class="modal-close" id="btn-modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="pull-preview-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" id="btn-preview-cancel">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="btn-preview-apply">Apply Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!--SCRIPT-->
+</body>
+</html>

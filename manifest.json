@@ -1,0 +1,13 @@
+{
+  "name": "Token Ferry",
+  "id": "token-ferry-plugin",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["api.github.com"]
+  },
+  "capabilities": [],
+  "enableProposedApi": false
+}

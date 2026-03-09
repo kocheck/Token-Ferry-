@@ -1,0 +1,25 @@
+{
+  "name": "token-ferry-sketch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Two-way GitHub sync for design tokens (DTCG JSON) with canvas visualization — Sketch edition",
+  "main": "token-ferry.sketchplugin",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
+  },
+  "skpm": {
+    "name": "token-ferry",
+    "manifest": "src/manifest.json",
+    "main": "token-ferry.sketchplugin"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

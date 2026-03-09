@@ -1,0 +1,4 @@
+node_modules/
+token-ferry.sketchplugin/
+*.js.map
+.DS_Store
