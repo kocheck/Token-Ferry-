@@ -174,17 +174,21 @@ function drawArrow(
     parent,
   });
 
-  // Use native NSBezierPath for the curve
-  const layer = path.sketchObject;
-  if (layer && layer.bezierPath) {
-    const nativePath = NSBezierPath.bezierPath();
-    nativePath.moveToPoint(NSMakePoint(fromX, fromY));
-    nativePath.curveToPoint_controlPoint1_controlPoint2(
-      NSMakePoint(toX, toY),
-      NSMakePoint(mx, cy1),
-      NSMakePoint(mx, cy2),
-    );
-    layer.bezierPath = nativePath;
+  // Use native NSBezierPath for the curve (only available in Sketch runtime)
+  try {
+    const layer = path.sketchObject;
+    if (layer && layer.bezierPath && typeof NSBezierPath !== 'undefined') {
+      const nativePath = NSBezierPath.bezierPath();
+      nativePath.moveToPoint(NSMakePoint(fromX, fromY));
+      nativePath.curveToPoint_controlPoint1_controlPoint2(
+        NSMakePoint(toX, toY),
+        NSMakePoint(mx, cy1),
+        NSMakePoint(mx, cy2),
+      );
+      layer.bezierPath = nativePath;
+    }
+  } catch {
+    // Native API unavailable — arrow curve will fall back to default shape
   }
 
   // Arrowhead triangle

@@ -5,9 +5,10 @@
   "description": "Two-way GitHub sync for design tokens (DTCG JSON) with canvas visualization — Sketch edition",
   "main": "token-ferry.sketchplugin",
   "scripts": {
-    "build": "skpm-build",
-    "watch": "skpm-build --watch",
-    "postinstall": "npm run build && skpm-link"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "skpm": {
     "name": "token-ferry",
@@ -15,12 +16,10 @@
     "main": "token-ferry.sketchplugin"
   },
   "devDependencies": {
-    "@skpm/builder": "^0.9.0",
     "typescript": "^5.6.0",
-    "@types/sketch-internals__generated": "^1.0.0"
-  },
-  "dependencies": {
-    "sketch-module-web-view": "^3.0.0",
-    "sketch-polyfill-fetch": "^0.4.0"
+    "vitest": "^3.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
   }
 }

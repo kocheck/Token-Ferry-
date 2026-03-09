@@ -28,7 +28,8 @@ function stringifyValue(v: unknown): string {
  */
 export function generatePullPreview(tokens: ParsedToken[]): PullPreview {
   const document = sketch.getSelectedDocument();
-  const existingSwatches = document ? document.swatches : [];
+  if (!document) throw new Error('No document open. Open a Sketch file first.');
+  const existingSwatches = document.swatches;
 
   // Build lookup by full swatch name (group/name)
   const existingMap = new Map<string, typeof existingSwatches[0]>();

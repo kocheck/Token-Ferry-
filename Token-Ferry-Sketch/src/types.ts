@@ -143,6 +143,12 @@ export function isDTCGToken(node: unknown): node is DTCGToken {
   );
 }
 
+// ── DTCG Validation ─────────────────────────────────────────────────────────
+
+export function validateDTCGDocument(data: unknown): data is DTCGGroup {
+  return typeof data === 'object' && data !== null && !Array.isArray(data);
+}
+
 // ── Color Helpers ────────────────────────────────────────────────────────────
 
 export function hexToRgba(hex: string): {

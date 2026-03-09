@@ -12,7 +12,7 @@ import { sketchColorToHex } from './types';
  */
 export function getSwatchGroups(): SwatchGroupInfo[] {
   const document = sketch.getSelectedDocument();
-  if (!document) return [];
+  if (!document) throw new Error('No document open. Open a Sketch file first.');
 
   const swatches = document.swatches;
   const groupMap = new Map<string, { id: string; count: number }>();
@@ -41,7 +41,7 @@ export function getSwatchGroups(): SwatchGroupInfo[] {
  */
 export function readSwatches(groupNames: string[]): SwatchData[] {
   const document = sketch.getSelectedDocument();
-  if (!document) return [];
+  if (!document) throw new Error('No document open. Open a Sketch file first.');
 
   const groupSet = new Set(groupNames);
   const swatches = document.swatches;

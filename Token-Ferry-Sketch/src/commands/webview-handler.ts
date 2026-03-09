@@ -6,7 +6,7 @@ import { getWebview } from 'sketch-module-web-view/remote';
 
 const WEBVIEW_ID = 'token-ferry-panel';
 
-export function onWebViewMessage(action: string): void {
+export function onWebViewMessage(_action: string): void {
   const webview = getWebview(WEBVIEW_ID);
   if (!webview) return;
 

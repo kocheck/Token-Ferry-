@@ -183,6 +183,12 @@ export function dtcgTypeToFigma(
   return DTCG_TO_FIGMA[dtcgType] as "COLOR" | "FLOAT" | "STRING" | "BOOLEAN";
 }
 
+// ── DTCG Validation ────────────────────────────────────────────────────────
+
+export function validateDTCGDocument(data: unknown): data is DTCGGroup {
+  return typeof data === 'object' && data !== null && !Array.isArray(data);
+}
+
 // ── Color Helpers ───────────────────────────────────────────────────────────
 
 export function rgbaToHex(color: {

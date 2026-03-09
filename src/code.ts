@@ -9,6 +9,7 @@ import { parseDTCGJson } from './json-parser';
 import { generatePullPreview, applyTokens } from './variables-writer';
 import { renderVariableCards } from './canvas-renderer';
 import type { UIToSandboxMessage, SandboxToUIMessage, GitHubSettings, ParsedToken, DTCGGroup } from './types';
+import { validateDTCGDocument } from './types';
 
 // ── Show UI ─────────────────────────────────────────────────────────────────
 
@@ -94,8 +95,12 @@ figma.ui.onmessage = async (msg: UIToSandboxMessage) => {
 
     case 'pull-data': {
       try {
-        const parsed = JSON.parse(msg.json) as DTCGGroup;
-        const tokens = parseDTCGJson(parsed);
+        const parsed: unknown = JSON.parse(msg.json);
+        if (!validateDTCGDocument(parsed)) {
+          sendStatus('Invalid token file: expected a JSON object.', 'error');
+          break;
+        }
+        const tokens = parseDTCGJson(parsed as DTCGGroup);
         pendingTokens = tokens;
 
         const preview = await generatePullPreview(tokens);

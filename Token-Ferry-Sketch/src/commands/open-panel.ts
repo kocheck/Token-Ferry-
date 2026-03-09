@@ -4,8 +4,8 @@
 
 import BrowserWindow from 'sketch-module-web-view';
 import { getWebview } from 'sketch-module-web-view/remote';
-import sketch from 'sketch/dom';
-import UI from 'sketch/ui';
+// sketch/dom and sketch/ui are used at runtime for Sketch API access
+// but some features are accessed indirectly through other modules
 import { loadSettings, saveSettings } from '../storage';
 import { getSwatchGroups, readSwatches } from '../swatches-reader';
 import { formatToDTCG } from '../json-formatter';
@@ -13,6 +13,7 @@ import { parseDTCGJson } from '../json-parser';
 import { generatePullPreview, applyTokens } from '../swatches-writer';
 import { renderSwatchCards } from '../canvas-renderer';
 import type { WebViewToPluginMessage, PluginToWebViewMessage, GitHubSettings, DTCGGroup } from '../types';
+import { validateDTCGDocument } from '../types';
 
 const WEBVIEW_ID = 'token-ferry-panel';
 
@@ -99,8 +100,12 @@ function handleMessage(msgString: string): void {
 
     case 'pull-data': {
       try {
-        const parsed = JSON.parse(msg.json) as DTCGGroup;
-        const tokens = parseDTCGJson(parsed);
+        const parsed: unknown = JSON.parse(msg.json);
+        if (!validateDTCGDocument(parsed)) {
+          sendStatus('Invalid token file: expected a JSON object.', 'error');
+          break;
+        }
+        const tokens = parseDTCGJson(parsed as DTCGGroup);
         pendingTokens = tokens;
 
         const preview = generatePullPreview(tokens);
@@ -166,6 +171,7 @@ export default function onRun(): void {
     handleMessage(msgString);
   });
 
-  // Load the UI HTML
+  // Load the UI HTML (require is needed for skpm/webpack asset resolution)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   browserWindow.loadURL(require('../../resources/ui.html'));
 }

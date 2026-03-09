@@ -42,7 +42,6 @@ const btnPreviewApply = document.getElementById('btn-preview-apply') as HTMLButt
 
 // ── State ──────────────────────────────────────────────────────────────────
 
-let collections: CollectionInfo[] = [];
 let allSelected = true;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -153,7 +152,6 @@ btnSaveSettings.addEventListener('click', () => {
 // ── Collections Rendering ──────────────────────────────────────────────────
 
 function renderCollections(data: CollectionInfo[]): void {
-  collections = data;
   collectionList.innerHTML = '';
 
   if (data.length === 0) {
@@ -251,7 +249,8 @@ async function handlePushData(data: { json: string; collections: string[] }): Pr
     const prBody = generatePRBody(data.collections);
     const pr = await createPullRequest(config, branchName, prTitle, prBody);
 
-    addStatus(`PR created: <a href="${pr.url}" target="_blank">#${pr.number}</a>`, 'success', true);
+    const safeUrl = pr.url.startsWith('https://github.com/') ? pr.url : '#';
+    addStatus(`PR created: <a href="${safeUrl}" target="_blank">#${pr.number}</a>`, 'success', true);
     postToSandbox({ type: 'push-complete', prUrl: pr.url });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -282,7 +281,13 @@ btnPull.addEventListener('click', async () => {
       return;
     }
 
-    const decoded = decodeURIComponent(escape(atob(file.content)));
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))));
+    } catch {
+      addStatus('Failed to decode file content — file may be corrupted.', 'error');
+      return;
+    }
     addStatus('File retrieved. Generating preview...', 'info');
     postToSandbox({ type: 'pull-data', json: decoded });
   } catch (err) {

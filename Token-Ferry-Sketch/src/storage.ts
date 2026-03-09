@@ -13,7 +13,13 @@ const STORAGE_KEY = 'github-settings';
  */
 export function loadSettings(): GitHubSettings | null {
   const data = Settings.settingForKey(STORAGE_KEY);
-  if (!data) return null;
+  if (!data || typeof data !== 'object') return null;
+
+  const d = data as Record<string, unknown>;
+  if (typeof d.owner !== 'string' || typeof d.repo !== 'string' || typeof d.pat !== 'string') {
+    return null;
+  }
+
   return data as GitHubSettings;
 }
 

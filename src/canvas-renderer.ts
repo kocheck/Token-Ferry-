@@ -43,8 +43,6 @@ async function gatherCardData(collectionIds: string[]): Promise<CardData[]> {
   ]);
 
   const varsById = new Map(allVariables.map(v => [v.id, v]));
-  const collectionSet = new Set(collectionIds);
-
   // Also build a collection-by-id map for resolving alias targets
   const collectionsById = new Map<string, VariableCollection>();
   for (const col of allCollections) {

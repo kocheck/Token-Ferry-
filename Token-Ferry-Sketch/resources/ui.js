@@ -50,6 +50,8 @@ function postToPlugin(msg) {
   // Sketch WebView uses this bridge to communicate with the plugin
   if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nativeLog) {
     window.webkit.messageHandlers.nativeLog.postMessage(msgString);
+  } else {
+    console.warn('Token Ferry: WebKit message bridge unavailable.');
   }
 }
 
@@ -303,7 +305,7 @@ function handlePushData(data) {
       addStatus('Checking for existing file...', 'info');
       return githubFetch(config, '/contents/' + config.filePath + '?ref=' + encodeURIComponent(branchName))
         .then(function(r) { return r.ok ? r.json() : null; })
-        .catch(function() { return null; });
+        .catch(function(err) { console.warn('Existing file check failed:', err); return null; });
     })
     .then(function(existing) {
       var commitMsg = 'Update design tokens via Token Ferry\n\nGroups: ' + data.groups.join(', ');
@@ -358,7 +360,12 @@ btnPull.addEventListener('click', function() {
       return r.json();
     })
     .then(function(fileData) {
-      var decoded = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ''))));
+      var decoded;
+      try {
+        decoded = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ''))));
+      } catch (e) {
+        throw new Error('Failed to decode file content: ' + (e.message || String(e)));
+      }
       addStatus('File retrieved. Generating preview...', 'info');
       postToPlugin({ type: 'pull-data', json: decoded });
     })
